@@ -1,0 +1,58 @@
+version: '3.8'
+services:
+  # service name (hostname) 'vprodb' based on connection info provided in src\main\resources\application.properties files
+  vprodb:
+    build:
+      # the Dockerfile is not in current dir, so we specify the dir to look for the Dockerfile like this
+      context: ./Docker-files/db
+    # image name
+    image: anhnm/vprofiledb
+    # container name. If not specify, it will be like compose_vprodb_1
+    container_name: vprodb
+    ports:
+      - "3306:3306"
+    volumes:
+      - vprodbdata:/var/lib/mysql
+    # environment var
+    environment:
+      - MYSQL_ROOT_PASSWORD=vprodbpass
+  
+  # directly fetch the image from Docker Hub and run it
+  vprocache01:
+    image: memcached
+    ports:
+      - "11211:11211"
+
+  vpromq01:
+    image: rabbitmq
+    ports:
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  vproapp:
+    build:
+      context: ./Docker-files/app
+    image: anhnm/vprofileapp
+    container_name: vproapp
+    ports:
+      - "8080:8080"
+    volumes:
+      - vproappdata:/usr/local/tomcat/webapps
+
+  vproweb:
+    build:
+      context: ./Docker-files/web
+    image: anhnm/vprofileweb
+    container_name: vproweb
+    ports:
+      - "80:80"
+
+# mention what volume to create
+# it will first create these volumes when run 'docker compose up' 
+# while building these containers it will map these volume whenever specified (in services)
+volumes:
+  # just giving curly brace means create a volume in the Docker Engine itself
+  vprodbdata: {}
+  vproappdata: {}
